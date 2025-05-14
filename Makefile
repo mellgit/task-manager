@@ -34,10 +34,11 @@ down:
 i:
 	docker images
 b:
-	docker build -t shorturl .
+	docker build -t taskmanager .
 cleardb:
-	rm -r ./redis_data ./postgres_data
+	rm -r ./postgres_data
 r: down cleardb up
 
-
+lt:
+	docker logs -f --tail 100 taskmanager
 
