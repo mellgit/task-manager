@@ -12,6 +12,7 @@ type Repository interface {
 	List(userID uuid.UUID) ([]*Task, error)
 	GetTask(userID uuid.UUID, taskID uuid.UUID) (*Task, error)
 	DeleteTask(userID uuid.UUID, taskID uuid.UUID) error
+	UpdateTask(userID uuid.UUID, task *Task) error
 	/*
 		todo
 		get task
@@ -90,4 +91,15 @@ func (r *repository) DeleteTask(userID uuid.UUID, taskID uuid.UUID) error {
 		return fmt.Errorf("exec ctx: %w", err)
 	}
 	return nil
+}
+
+func (r *repository) UpdateTask(userID uuid.UUID, task *Task) error {
+
+	query := `update tasks set title=$1, description=$2, priority=$3, updated_at=NOW() where user_id = $4`
+	_, err := r.db.ExecContext(r.ctx, query, task.Title, task.Description, task.Priority, userID)
+	if err != nil {
+		return fmt.Errorf("exec ctx: %w", err)
+	}
+	return nil
+
 }

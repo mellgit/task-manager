@@ -7,6 +7,7 @@ type Service interface {
 	ListTasks(userID uuid.UUID) ([]*Task, error)
 	GetTask(userID uuid.UUID, taskID uuid.UUID) (*Task, error)
 	DeleteTask(userID uuid.UUID, taskID uuid.UUID) error
+	UpdateTask(userID uuid.UUID, task *TaskRequest) error
 }
 
 type service struct {
@@ -47,4 +48,14 @@ func (s *service) GetTask(userID uuid.UUID, taskID uuid.UUID) (*Task, error) {
 
 func (s *service) DeleteTask(userID uuid.UUID, taskID uuid.UUID) error {
 	return s.repo.DeleteTask(userID, taskID)
+}
+
+func (s *service) UpdateTask(userID uuid.UUID, task *TaskRequest) error {
+
+	return s.repo.UpdateTask(userID, &Task{
+		UserID:      userID,
+		Title:       task.Title,
+		Description: task.Description,
+		Priority:    task.Priority,
+	})
 }

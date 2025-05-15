@@ -25,6 +25,7 @@ func (h *Handler) GroupHandler(app *fiber.App) {
 	group.Get("/", h.List)
 	group.Get("/:task_id", h.GetTask)
 	group.Delete("/:task_id", h.DeleteTask)
+	group.Patch("/:task_id", h.UpdateTask)
 
 }
 
@@ -97,4 +98,25 @@ func (h *Handler) DeleteTask(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(msgErr)
 	}
 	return ctx.SendStatus(fiber.StatusNoContent)
+}
+
+func (h *Handler) UpdateTask(ctx *fiber.Ctx) error {
+
+	userID := ctx.Locals("user_id").(string)
+	payload := &TaskRequest{}
+	if err := ctx.BodyParser(&payload); err != nil {
+		h.Logger.WithFields(log.Fields{
+			"action": "ctx.BodyParser",
+		}).Errorf("%v", err)
+		msgErr := ErrorResponse{Error: err.Error()}
+		return ctx.Status(fiber.StatusBadRequest).JSON(msgErr)
+	}
+	if err := h.service.UpdateTask(uuid.MustParse(userID), payload); err != nil {
+		h.Logger.WithFields(log.Fields{
+			"action": "DeleteTask",
+		}).Errorf("%v", err)
+		msgErr := ErrorResponse{Error: err.Error()}
+		return ctx.Status(fiber.StatusInternalServerError).JSON(msgErr)
+	}
+	return ctx.SendStatus(fiber.StatusOK)
 }
