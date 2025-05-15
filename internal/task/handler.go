@@ -7,29 +7,26 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Handler interface {
-	GroupHandler(app *fiber.App)
-}
-
-type handler struct {
+type Handler struct {
 	service Service
 	Logger  *log.Entry
 }
 
-func NewHandler(service Service, logger *log.Entry) Handler {
-	return &handler{
+func NewHandler(service Service, logger *log.Entry) *Handler {
+	return &Handler{
 		service: service,
 		Logger:  logger,
 	}
 }
 
-func (h *handler) GroupHandler(app *fiber.App) {
+func (h *Handler) GroupHandler(app *fiber.App) {
 	group := app.Group("/api/tasks", middleware.JWTProtected())
 	group.Post("/", h.Create)
+	group.Get("/", h.List)
 
 }
 
-func (h *handler) Create(ctx *fiber.Ctx) error {
+func (h *Handler) Create(ctx *fiber.Ctx) error {
 
 	payload := &TaskRequest{}
 	if err := ctx.BodyParser(&payload); err != nil {
@@ -52,4 +49,19 @@ func (h *handler) Create(ctx *fiber.Ctx) error {
 
 	return ctx.SendStatus(fiber.StatusCreated)
 
+}
+
+func (h *Handler) List(ctx *fiber.Ctx) error {
+
+	userID := ctx.Locals("user_id").(string)
+	tasks, err := h.service.ListTasks(uuid.MustParse(userID))
+	if err != nil {
+		h.Logger.WithFields(log.Fields{
+			"action": "CreateTask",
+		}).Errorf("%v", err)
+		msgErr := ErrorResponse{Error: err.Error()}
+		return ctx.Status(fiber.StatusInternalServerError).JSON(msgErr)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(tasks)
 }
