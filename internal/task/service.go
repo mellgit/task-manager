@@ -5,6 +5,7 @@ import "github.com/google/uuid"
 type Service interface {
 	CreateTask(userID uuid.UUID, task *TaskRequest) error
 	ListTasks(userID uuid.UUID) ([]*Task, error)
+	GetTask(userID uuid.UUID, taskID uuid.UUID) (*Task, error)
 }
 
 type service struct {
@@ -32,4 +33,13 @@ func (s *service) ListTasks(userID uuid.UUID) ([]*Task, error) {
 	}
 	return tasks, nil
 
+}
+
+func (s *service) GetTask(userID uuid.UUID, taskID uuid.UUID) (*Task, error) {
+
+	task, err := s.repo.GetTask(userID, taskID)
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
 }

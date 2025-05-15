@@ -10,6 +10,7 @@ import (
 type Repository interface {
 	Create(task *Task) error
 	List(userID uuid.UUID) ([]*Task, error)
+	GetTask(userID uuid.UUID, taskID uuid.UUID) (*Task, error)
 	/*
 		todo
 		get task
@@ -64,4 +65,19 @@ func (r *repository) List(userID uuid.UUID) ([]*Task, error) {
 		return nil, fmt.Errorf("rows: %w", err)
 	}
 	return tasks, nil
+}
+
+func (r *repository) GetTask(userID uuid.UUID, taskID uuid.UUID) (*Task, error) {
+
+	query := `select * from tasks where user_id = $1 and id = $2`
+	row := r.db.QueryRowContext(r.ctx, query, userID, taskID)
+	if err := row.Err(); err != nil {
+		return nil, fmt.Errorf("rows: %w", err)
+	}
+	var task Task
+	if err := row.Scan(&task.ID, &task.UserID, &task.Title, &task.Description, &task.Status, &task.Priority, &task.CreatedAt, &task.UpdatedAt); err != nil {
+		return nil, fmt.Errorf("scan: %w", err)
+	}
+	return &task, nil
+
 }
