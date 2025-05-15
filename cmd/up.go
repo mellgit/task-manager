@@ -10,6 +10,7 @@ import (
 	"github.com/mellgit/task-manager/internal/config"
 	dbInit "github.com/mellgit/task-manager/internal/db"
 	"github.com/mellgit/task-manager/internal/pkg/logger"
+	"github.com/mellgit/task-manager/internal/task"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -62,6 +63,11 @@ func Up() {
 		authService := auth.NewService(authRepo)
 		authHandler := auth.NewHandler(authService, log.WithFields(log.Fields{"service": "AuthUser"}))
 		authHandler.GroupHandler(app)
+
+		taskRepo := task.NewRepo(postgresClient)
+		taskService := task.NewService(taskRepo)
+		taskHandler := task.NewHandler(taskService, log.WithFields(log.Fields{"service": "Task"}))
+		taskHandler.GroupHandler(app)
 
 		app.Get("/swagger/*", swagger.HandlerDefault)
 
