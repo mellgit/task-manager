@@ -23,6 +23,7 @@ func (h *Handler) GroupHandler(app *fiber.App) {
 	group := app.Group("/api/tasks", middleware.JWTProtected())
 	group.Post("/", h.Create)
 	group.Get("/", h.List)
+	group.Get("/protected", h.Protected)
 	group.Get("/:task_id", h.GetTask)
 	group.Delete("/:task_id", h.DeleteTask)
 	group.Patch("/:task_id", h.UpdateTask)
@@ -119,4 +120,8 @@ func (h *Handler) UpdateTask(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(msgErr)
 	}
 	return ctx.SendStatus(fiber.StatusOK)
+}
+
+func (h *Handler) Protected(ctx *fiber.Ctx) error {
+	return ctx.Status(fiber.StatusOK).JSON(MessageResponse{Message: "authorized user"})
 }
