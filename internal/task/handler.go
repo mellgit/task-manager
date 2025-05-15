@@ -24,6 +24,7 @@ func (h *Handler) GroupHandler(app *fiber.App) {
 	group.Post("/", h.Create)
 	group.Get("/", h.List)
 	group.Get("/:task_id", h.GetTask)
+	group.Delete("/:task_id", h.DeleteTask)
 
 }
 
@@ -82,4 +83,18 @@ func (h *Handler) GetTask(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusOK).JSON(task)
 
+}
+
+func (h *Handler) DeleteTask(ctx *fiber.Ctx) error {
+
+	userID := ctx.Locals("user_id").(string)
+	taskID := ctx.Params("task_id")
+	if err := h.service.DeleteTask(uuid.MustParse(userID), uuid.MustParse(taskID)); err != nil {
+		h.Logger.WithFields(log.Fields{
+			"action": "DeleteTask",
+		}).Errorf("%v", err)
+		msgErr := ErrorResponse{Error: err.Error()}
+		return ctx.Status(fiber.StatusInternalServerError).JSON(msgErr)
+	}
+	return ctx.SendStatus(fiber.StatusNoContent)
 }
