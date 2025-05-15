@@ -30,6 +30,19 @@ func (h *Handler) GroupHandler(app *fiber.App) {
 
 }
 
+// Create
+// @Summary      Create
+// @Description  Create task
+// @Security ApiKeyAuth
+// @Tags         Tasks
+// @Accept       json
+// @Produce      json
+// @Param 		 request body TaskRequest true "body"
+// @Success      200 {object} int
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /api/tasks [post]
 func (h *Handler) Create(ctx *fiber.Ctx) error {
 
 	payload := &TaskRequest{}
@@ -55,6 +68,18 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 
 }
 
+// List
+// @Summary      List
+// @Description  List tasks
+// @Security ApiKeyAuth
+// @Tags         Tasks
+// @Accept       json
+// @Produce      json
+// @Success      200 {array} Task
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /api [get]
 func (h *Handler) List(ctx *fiber.Ctx) error {
 
 	userID := ctx.Locals("user_id").(string)
@@ -70,6 +95,19 @@ func (h *Handler) List(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(tasks)
 }
 
+// GetTask
+// @Summary      GetTask
+// @Description  Get one task
+// @Security ApiKeyAuth
+// @Tags         Tasks
+// @Accept       json
+// @Produce      json
+// @Param        task_id path string true "task_id"
+// @Success      200 {object} Task
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /api/tasks/{task_id} [get]
 func (h *Handler) GetTask(ctx *fiber.Ctx) error {
 
 	userID := ctx.Locals("user_id").(string)
@@ -87,6 +125,19 @@ func (h *Handler) GetTask(ctx *fiber.Ctx) error {
 
 }
 
+// DeleteTask
+// @Summary      DeleteTask
+// @Description  Delete task
+// @Security ApiKeyAuth
+// @Tags         Tasks
+// @Accept       json
+// @Produce      json
+// @Param        task_id path string true "task_id"
+// @Success      200 {object} int
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /api/tasks/{task_id} [delete]
 func (h *Handler) DeleteTask(ctx *fiber.Ctx) error {
 
 	userID := ctx.Locals("user_id").(string)
@@ -101,6 +152,19 @@ func (h *Handler) DeleteTask(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
+// UpdateTask
+// @Summary      UpdateTask
+// @Description  Update task
+// @Security ApiKeyAuth
+// @Tags         Tasks
+// @Accept       json
+// @Produce      json
+// @Param 		 request body TaskRequest true "body"
+// @Success      200 {object} int
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /api/tasks/{task_id} [patch]
 func (h *Handler) UpdateTask(ctx *fiber.Ctx) error {
 
 	userID := ctx.Locals("user_id").(string)
@@ -122,6 +186,19 @@ func (h *Handler) UpdateTask(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusOK)
 }
 
+// Protected
+// @Summary      Protected
+// @Description  Protected check authorized user
+// @Security ApiKeyAuth
+// @Tags         Tasks
+// @Accept       json
+// @Produce      json
+// @Success      200 {object} MessageResponse
+// @Failure      400 {object} ErrorResponse
+// @Failure      401 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /api/tasks/protected [get]
 func (h *Handler) Protected(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(MessageResponse{Message: "authorized user"})
 }
