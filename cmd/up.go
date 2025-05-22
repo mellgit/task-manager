@@ -9,8 +9,9 @@ import (
 	"github.com/mellgit/task-manager/internal/auth"
 	"github.com/mellgit/task-manager/internal/config"
 	dbInit "github.com/mellgit/task-manager/internal/db"
-	"github.com/mellgit/task-manager/internal/pkg/logger"
+	"github.com/mellgit/task-manager/internal/queue"
 	"github.com/mellgit/task-manager/internal/task"
+	"github.com/mellgit/task-manager/pkg/logger"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -56,6 +57,8 @@ func Up() {
 	}
 
 	// TODO kafka init
+	kafkaAddr := fmt.Sprintf("%s:%d", envCfg.KafkaHost, envCfg.KafkaPort)
+	producer := queue.NewProducer(kafkaAddr, envCfg.KafkaNameTopic)
 
 	app := fiber.New()
 	{
@@ -65,7 +68,7 @@ func Up() {
 		authHandler.GroupHandler(app)
 
 		taskRepo := task.NewRepo(postgresClient)
-		taskService := task.NewService(taskRepo)
+		taskService := task.NewService(taskRepo, producer)
 		taskHandler := task.NewHandler(taskService, log.WithFields(log.Fields{"service": "Task"}))
 		taskHandler.GroupHandler(app)
 
@@ -76,5 +79,7 @@ func Up() {
 			"action": "app.Listen",
 		}).Fatal(app.Listen(fmt.Sprintf(":%v", envCfg.APIPort)))
 	}
+
+	// todo start worker process for read kafka
 
 }
