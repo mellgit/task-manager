@@ -1,3 +1,4 @@
 .idea/
 postgres_data/
+kafka_data/
 bin/
