@@ -1,22 +1,23 @@
 package worker
 
 import (
-	"fmt"
-	"github.com/mellgit/task-manager/internal/queue"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
 type Service interface {
 	Process(payload TaskPayload) error
+	GetPayload() TaskPayload
 }
 
 type service struct {
-	repo     Repository
-	consumer *queue.Consumer
+	repo Repository
+	log  *log.Entry
 }
 
-func NewService(repo Repository, consumer *queue.Consumer) Service {
-	return &service{repo, consumer}
+func NewService(repo Repository, log *log.Entry) Service {
+	//func NewService(repo Repository, consumer *queue.Consumer) Service {
+	return &service{repo, log}
 }
 
 func (s *service) Process(payload TaskPayload) error {
@@ -25,7 +26,7 @@ func (s *service) Process(payload TaskPayload) error {
 	if err := s.repo.ChangeStatus("in_progress", payload.TaskID); err != nil {
 		return err
 	}
-	fmt.Println("processing task", payload.TaskID)
+	log.Infof("processing task %v", payload.TaskID)
 
 	// complete the task
 	s.doSomething()
@@ -34,9 +35,13 @@ func (s *service) Process(payload TaskPayload) error {
 	if err := s.repo.ChangeStatus("done", payload.TaskID); err != nil {
 		return err
 	}
-	fmt.Println("done task", payload.TaskID)
+	log.Infof("task is done %v", payload.TaskID)
 
 	return nil
+}
+
+func (s *service) GetPayload() TaskPayload {
+	return TaskPayload{}
 }
 
 func (s *service) doSomething() {
