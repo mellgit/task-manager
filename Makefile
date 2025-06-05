@@ -31,7 +31,7 @@ swag:
 pa:
 	docker ps -a
 up:
-	docker compose up --build -d && make ct
+	docker compose up --build -d
 down:
 	docker compose down
 i:
