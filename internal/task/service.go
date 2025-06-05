@@ -1,6 +1,9 @@
 package task
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/mellgit/task-manager/internal/queue"
+)
 
 type Service interface {
 	CreateTask(userID uuid.UUID, task *TaskRequest) error
@@ -11,20 +14,30 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	repo     Repository
+	producer *queue.Producer
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo}
+func NewService(repo Repository, producer *queue.Producer) Service {
+	return &service{repo, producer}
 }
 func (s *service) CreateTask(userID uuid.UUID, task *TaskRequest) error {
-	return s.repo.Create(&Task{
+
+	taskID, err := s.repo.Create(&Task{
 		UserID:      userID,
 		Title:       task.Title,
 		Description: task.Description,
 		Status:      "pending",
 		Priority:    task.Priority,
 	})
+	if err != nil {
+		return err
+	}
+	if err := s.producer.Publish(queue.TaskPayload{TaskID: uuid.MustParse(taskID), UserID: userID}); err != nil {
+		return err
+	}
+	return nil
+
 }
 
 func (s *service) ListTasks(userID uuid.UUID) ([]*Task, error) {

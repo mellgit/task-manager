@@ -1,5 +1,8 @@
 include .env
 LOCAL_BIN:=$(PWD)/bin
+# kafka
+KAFKA_CONTAINER=kafka
+BROKER=localhost:9092
 
 # tools
 install-deps:
@@ -39,6 +42,40 @@ cleardb:
 	rm -r ./postgres_data
 r: down cleardb up
 
-lt:
+ltm:
 	docker logs -f --tail 100 taskmanager
 
+
+# create topic
+ct:
+	docker exec -it $(KAFKA_CONTAINER) kafka-topics.sh \
+		--create \
+		--topic $(KAFKA_NAME_TOPIC) \
+		--bootstrap-server $(BROKER) \
+		--partitions 1 \
+		--replication-factor 1
+
+# list topics
+lt:
+	docker exec -it $(KAFKA_CONTAINER) kafka-topics.sh \
+		--list \
+		--bootstrap-server $(BROKER)
+
+# send message in topic (producer)
+p:
+	docker exec -it $(KAFKA_CONTAINER) kafka-console-producer.sh \
+		--broker-list $(BROKER) \
+		--topic $(KAFKA_NAME_TOPIC)
+
+# get message from topic (consumer)
+c:
+	docker exec -it $(KAFKA_CONTAINER) kafka-console-consumer.sh \
+		--bootstrap-server $(BROKER) \
+		--topic $(KAFKA_NAME_TOPIC) \
+		--from-beginning
+
+# connect to the kafka
+ek:
+	docker exec -it $(KAFKA_CONTAINER) /bin/bash
+lk:
+	docker logs -f --tail 100 $(KAFKA_CONTAINER)

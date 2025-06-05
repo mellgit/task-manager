@@ -8,18 +8,11 @@ import (
 )
 
 type Repository interface {
-	Create(task *Task) error
+	Create(task *Task) (string, error)
 	List(userID uuid.UUID) ([]*Task, error)
 	GetTask(userID uuid.UUID, taskID uuid.UUID) (*Task, error)
 	DeleteTask(userID uuid.UUID, taskID uuid.UUID) error
 	UpdateTask(userID uuid.UUID, task *Task) error
-	/*
-		todo
-		get task
-		delete task
-		get all tasks
-		update task
-	*/
 }
 
 type repository struct {
@@ -34,16 +27,16 @@ func NewRepo(db *sql.DB) Repository {
 	}
 }
 
-func (r *repository) Create(task *Task) error {
+func (r *repository) Create(task *Task) (string, error) {
 
 	query := `insert into tasks (user_id, title, description, status, priority, created_at, updated_at)  
-				values ($1, $2, $3, $4, $5, NOW(), NOW())`
-
-	_, err := r.db.ExecContext(r.ctx, query, task.UserID, task.Title, task.Description, task.Status, task.Priority)
-	if err != nil {
-		return fmt.Errorf("exec ctx: %w", err)
+				values ($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING id`
+	row := r.db.QueryRowContext(r.ctx, query, task.UserID, task.Title, task.Description, task.Status, task.Priority)
+	var taskID string
+	if err := row.Scan(&taskID); err != nil {
+		return "", err
 	}
-	return nil
+	return taskID, nil
 }
 
 func (r *repository) List(userID uuid.UUID) ([]*Task, error) {
