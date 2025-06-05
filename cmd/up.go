@@ -58,10 +58,28 @@ func Up() {
 	}
 
 	kafkaAddr := fmt.Sprintf("%s:%d", envCfg.KafkaHost, envCfg.KafkaPort)
-	producer := queue.NewProducer(kafkaAddr, envCfg.KafkaNameTopic)
+	producer, err := queue.NewProducer(kafkaAddr, envCfg.KafkaNameTopic, log.WithFields(log.Fields{"queue": "Producer"}))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"action": "queue.NewProducer",
+		}).Fatal(err)
+	}
+	defer producer.Writer.Close()
 
-	go func() {
-		app := fiber.New()
+	workerRepo := worker.NewRepo(postgresClient)
+	workerService := worker.NewService(workerRepo, log.WithFields(log.Fields{"service": "Worker"}))
+	consumer, err := queue.NewConsumer(kafkaAddr, envCfg.KafkaNameTopic, workerService, log.WithFields(log.Fields{"queue": "Consumer"}))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"action": "queue.NewConsumer",
+		}).Fatal(err)
+	}
+	defer consumer.Reader.Close()
+
+	go consumer.Start()
+
+	app := fiber.New()
+	{
 		authRepo := auth.NewRepo(postgresClient)
 		authService := auth.NewService(authRepo)
 		authHandler := auth.NewHandler(authService, log.WithFields(log.Fields{"service": "AuthUser"}))
@@ -78,20 +96,6 @@ func Up() {
 		log.WithFields(log.Fields{
 			"action": "app.Listen",
 		}).Fatal(app.Listen(fmt.Sprintf(":%v", envCfg.APIPort)))
-	}()
-
-	log.Info("starting consumer server")
-	consumer := queue.NewConsumer(kafkaAddr, envCfg.KafkaNameTopic)
-	workerRepo := worker.NewRepo(postgresClient)
-	workerService := worker.NewService(workerRepo, consumer)
-	// todo goroutine
-	consumer.Start(func(payload queue.TaskPayload) error {
-		wp := worker.TaskPayload{
-			TaskID: payload.TaskID,
-			UserID: payload.UserID,
-		}
-		return workerService.Process(wp)
-
-	})
+	}
 
 }

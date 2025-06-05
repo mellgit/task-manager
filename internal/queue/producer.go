@@ -1,12 +1,11 @@
 package queue
 
 import (
-	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/IBM/sarama"
 	"github.com/google/uuid"
-	"time"
-
-	"github.com/segmentio/kafka-go"
+	log "github.com/sirupsen/logrus"
 )
 
 type TaskPayload struct {
@@ -15,29 +14,49 @@ type TaskPayload struct {
 }
 
 type Producer struct {
-	writer *kafka.Writer
+	Writer sarama.SyncProducer
+	topic  string
+	logger *log.Entry
 }
 
-func NewProducer(brokerAddress, topicName string) *Producer {
-	return &Producer{
-		writer: &kafka.Writer{
-			Addr:     kafka.TCP(brokerAddress),
-			Topic:    topicName,
-			Balancer: &kafka.LeastBytes{},
-		},
+func NewProducer(brokerAddress, topic string, logger *log.Entry) (*Producer, error) {
+	saramaConfig := sarama.NewConfig()
+	saramaConfig.Producer.Return.Successes = true
+	saramaConfig.Producer.RequiredAcks = sarama.WaitForAll
+	saramaConfig.Producer.Retry.Max = 5
+
+	producer, err := sarama.NewSyncProducer([]string{brokerAddress}, saramaConfig)
+	if err != nil {
+		return nil, err
 	}
+	return &Producer{
+		Writer: producer,
+		topic:  topic,
+		logger: logger,
+	}, nil
 }
 
 func (p *Producer) Publish(payload TaskPayload) error {
-	data, err := json.Marshal(payload)
+
+	taskPayload := new(TaskPayload)
+	taskPayload.TaskID = payload.TaskID
+	taskPayload.UserID = payload.UserID
+
+	data, err := json.Marshal(taskPayload)
 	if err != nil {
-		return err
+		return fmt.Errorf("error marshalling task payload: %s", err)
 	}
 
-	msg := kafka.Message{
-		Key:   []byte(time.Now().String()),
-		Value: data,
+	msg := &sarama.ProducerMessage{
+		Topic: p.topic,
+		Value: sarama.ByteEncoder(data),
 	}
 
-	return p.writer.WriteMessages(context.Background(), msg)
+	partition, offset, err := p.Writer.SendMessage(msg)
+	if err != nil {
+		return fmt.Errorf("error sending message: %s", err)
+	}
+	log.Infof("message sent to partition %d at offset %d\n", partition, offset)
+	return nil
+
 }
