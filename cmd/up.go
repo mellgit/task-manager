@@ -11,6 +11,7 @@ import (
 	dbInit "github.com/mellgit/task-manager/internal/db"
 	"github.com/mellgit/task-manager/internal/queue"
 	"github.com/mellgit/task-manager/internal/task"
+	"github.com/mellgit/task-manager/internal/worker"
 	"github.com/mellgit/task-manager/pkg/logger"
 	log "github.com/sirupsen/logrus"
 )
@@ -56,12 +57,11 @@ func Up() {
 		}).Fatal(err)
 	}
 
-	// TODO kafka init
 	kafkaAddr := fmt.Sprintf("%s:%d", envCfg.KafkaHost, envCfg.KafkaPort)
 	producer := queue.NewProducer(kafkaAddr, envCfg.KafkaNameTopic)
 
-	app := fiber.New()
-	{
+	go func() {
+		app := fiber.New()
 		authRepo := auth.NewRepo(postgresClient)
 		authService := auth.NewService(authRepo)
 		authHandler := auth.NewHandler(authService, log.WithFields(log.Fields{"service": "AuthUser"}))
@@ -78,8 +78,20 @@ func Up() {
 		log.WithFields(log.Fields{
 			"action": "app.Listen",
 		}).Fatal(app.Listen(fmt.Sprintf(":%v", envCfg.APIPort)))
-	}
+	}()
 
-	// todo start worker process for read kafka
+	log.Info("starting consumer server")
+	consumer := queue.NewConsumer(kafkaAddr, envCfg.KafkaNameTopic)
+	workerRepo := worker.NewRepo(postgresClient)
+	workerService := worker.NewService(workerRepo, consumer)
+	// todo goroutine
+	consumer.Start(func(payload queue.TaskPayload) error {
+		wp := worker.TaskPayload{
+			TaskID: payload.TaskID,
+			UserID: payload.UserID,
+		}
+		return workerService.Process(wp)
+
+	})
 
 }
