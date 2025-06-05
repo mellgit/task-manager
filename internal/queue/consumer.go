@@ -12,12 +12,13 @@ type Consumer struct {
 	reader *kafka.Reader
 }
 
-func NewConsumer(broker, groupID, topic string) *Consumer {
+func NewConsumer(broker, topic string) *Consumer {
 	return &Consumer{
 		reader: kafka.NewReader(kafka.ReaderConfig{
-			Brokers: []string{broker},
-			GroupID: groupID,
-			Topic:   topic,
+			Brokers:   []string{broker},
+			Topic:     topic,
+			Partition: 0,
+			MaxBytes:  10e6, // 10MB
 		}),
 	}
 }
@@ -26,19 +27,19 @@ func (c *Consumer) Start(process func(TaskPayload) error) {
 	for {
 		msg, err := c.reader.ReadMessage(context.Background())
 		if err != nil {
-			fmt.Printf("Kafka read error: %v", err)
+			fmt.Printf("kafka read error: %v", err)
 			continue
 		}
 
 		var payload TaskPayload
 		if err := json.Unmarshal(msg.Value, &payload); err != nil {
-			fmt.Printf("Invalid task payload: %v", err)
+			fmt.Printf("invalid task payload: %v", err)
 			continue
 		}
 
-		fmt.Printf("Processing task: %+v\n", payload)
+		fmt.Printf("processing task: %+v\n", payload)
 		if err := process(payload); err != nil {
-			fmt.Printf("Task processing failed: %v", err)
+			fmt.Printf("task processing failed: %v", err)
 		}
 	}
 }
