@@ -19,7 +19,6 @@ import (
 // Up
 // @title Task manager
 // @version 1.0
-// @host localhost:3000
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
