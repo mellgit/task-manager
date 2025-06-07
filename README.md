@@ -2,7 +2,6 @@
 
 Task manager - this is a service for adding tasks to a queue.
 
-**Note:** this documentation in development 
 
 ## Table of Contents
 - [Docker Installation](#Docker)
@@ -41,7 +40,16 @@ Additionally:
 
 **Note:** more details are described in swagger
 
-What's next?: **in development**
+What's next?: 
+
+After authentication, you can:
+- create a task 
+- get
+- delete
+- change
+- get a list of tasks
+
+When a task is created, it sends it to the worker for processing (processing is an imitation, in fact it does nothing except change the status of the task to `done`)
 
 
 
@@ -60,7 +68,6 @@ Broker
 
 Data Base
 - **PostgreSQL**
-- **Redis**
 
 
 **Note:** swagger documentation is available at `http://localhost:3000/swagger/index.html`
@@ -69,29 +76,48 @@ Data Base
 
 
 ```
-
 task-manager/
-├── cmd/                    # entry point
-│   └── main.go
-├── internal/
-│   ├── task/               # use case
-│   │   ├── handler.go
-│   │   ├── service.go
-│   │   ├── repository.go
-│   │   └── model.go
-│   ├── queue/              # queue and workers
-│   │   ├── producer.go
-│   │   └── consumer.go
-│   ├── user/               # registration and auth
-│   │   ├── handler.go
-│   │   ├── service.go
-│   │   ├── model.go
-│   │   └── repository.go
-│   └── middleware/         # JWT, log
-├── pkg/
-│   └── config/             # env-variable
-├── migrations/             # SQL migrations
+├── Dockerfile
+├── Makefile
+├── README.md
+├── cmd
+│   └── up.go                # entry point
+├── config.yml
+├── docker-compose.yml
+├── docs
+│   ├── docs.go
+│   ├── swagger.json
+│   └── swagger.yaml
 ├── go.mod
-└── README.md
-
+├── go.sum
+├── internal
+│   ├── auth                  # registration and auth
+│   │   ├── handler.go
+│   │   ├── model.go
+│   │   ├── repository.go
+│   │   └── service.go
+│   ├── config
+│   │   └── config.go
+│   ├── db
+│   │   └── postgres.go
+│   ├── middleware
+│   │   └── jwt.go
+│   ├── queue                 # producer and consumer kafka
+│   │   ├── consumer.go
+│   │   └── producer.go
+│   ├── task                  # task use case
+│   │   ├── handler.go
+│   │   ├── model.go
+│   │   ├── repository.go
+│   │   └── service.go
+│   └── worker                 # worker use case
+│       ├── model.go
+│       ├── repository.go
+│       └── service.go
+├── main.go
+├── migrations
+│   └── 20250515135413_init.sql
+└── pkg
+    └── logger
+        └── logger.go
 ```
