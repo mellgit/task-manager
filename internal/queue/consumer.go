@@ -2,7 +2,6 @@ package queue
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/mellgit/task-manager/internal/worker"
 
@@ -36,20 +35,23 @@ func (c *Consumer) Start() {
 
 	consumer, err := c.Reader.ConsumePartition(c.topic, 0, sarama.OffsetOldest)
 	if err != nil {
-		errMsg := fmt.Sprintf("Error creating consumer for topic %s: %s", c.topic, err)
-		panic(errMsg)
+		c.logger.Errorf("Error creating consumer for topic %s: %s", c.topic, err)
 	}
+	defer consumer.Close()
 
 	log.Info("starting consumer server")
 
 	for {
 		select {
 		case err := <-consumer.Errors():
-			log.Infof("fail to consume from kafka %v\n", err)
+			c.logger.Errorf("fail to consume from kafka %v\n", err)
 		case msg := <-consumer.Messages():
-			log.Infof("consume from kafka %v\n", string(msg.Value))
+			c.logger.Infof("consume from kafka %s", msg.Value)
 			data := new(TaskPayload)
-			var _ = json.Unmarshal(msg.Value, data)
+			if err := json.Unmarshal(msg.Value, data); err != nil {
+				log.Errorf("failed to unmarshal message: %v\n", err)
+				continue
+			}
 			// taskPayload in the queue package and in worker are the same
 			// but golang considers them different
 			// so it is necessary to convert the types
@@ -57,7 +59,8 @@ func (c *Consumer) Start() {
 			fromWorker.UserID = data.UserID
 			fromWorker.TaskID = data.TaskID
 			if err := c.serviceWorker.Process(fromWorker); err != nil {
-				return
+            	c.logger.Errorf("failed to process task: %v\n", err)
+				continue
 			}
 
 		}

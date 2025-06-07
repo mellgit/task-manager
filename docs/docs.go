@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api": {
+        "/api/tasks": {
             "get": {
                 "security": [
                     {
@@ -62,9 +62,7 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/api/tasks": {
+            },
             "post": {
                 "security": [
                     {
@@ -298,6 +296,13 @@ const docTemplate = `{
                 ],
                 "summary": "UpdateTask",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "task_id",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "description": "body",
                         "name": "request",
@@ -702,7 +707,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:3000",
+	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "Task manager",

@@ -38,11 +38,7 @@ func NewProducer(brokerAddress, topic string, logger *log.Entry) (*Producer, err
 
 func (p *Producer) Publish(payload TaskPayload) error {
 
-	taskPayload := new(TaskPayload)
-	taskPayload.TaskID = payload.TaskID
-	taskPayload.UserID = payload.UserID
-
-	data, err := json.Marshal(taskPayload)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("error marshalling task payload: %s", err)
 	}
@@ -56,7 +52,6 @@ func (p *Producer) Publish(payload TaskPayload) error {
 	if err != nil {
 		return fmt.Errorf("error sending message: %s", err)
 	}
-	log.Infof("message sent to partition %d at offset %d\n", partition, offset)
+	p.logger.Infof("message sent to partition %d at offset %d\n", partition, offset)
 	return nil
-
 }

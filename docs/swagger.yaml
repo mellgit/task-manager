@@ -93,13 +93,12 @@ definitions:
       title:
         type: string
     type: object
-host: localhost:3000
 info:
   contact: {}
   title: Task manager
   version: "1.0"
 paths:
-  /api:
+  /api/tasks:
     get:
       consumes:
       - application/json
@@ -130,7 +129,6 @@ paths:
       summary: List
       tags:
       - Tasks
-  /api/tasks:
     post:
       consumes:
       - application/json
@@ -240,6 +238,11 @@ paths:
       - application/json
       description: Update task
       parameters:
+      - description: task_id
+        in: path
+        name: task_id
+        required: true
+        type: string
       - description: body
         in: body
         name: request

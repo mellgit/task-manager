@@ -5,9 +5,8 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:3000",
     "paths": {
-        "/api": {
+        "/api/tasks": {
             "get": {
                 "security": [
                     {
@@ -54,9 +53,7 @@
                         }
                     }
                 }
-            }
-        },
-        "/api/tasks": {
+            },
             "post": {
                 "security": [
                     {
@@ -290,6 +287,13 @@
                 ],
                 "summary": "UpdateTask",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "task_id",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "description": "body",
                         "name": "request",

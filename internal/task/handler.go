@@ -79,7 +79,7 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
-// @Router       /api [get]
+// @Router       /api/tasks [get]
 func (h *Handler) List(ctx *fiber.Ctx) error {
 
 	userID := ctx.Locals("user_id").(string)
@@ -159,6 +159,7 @@ func (h *Handler) DeleteTask(ctx *fiber.Ctx) error {
 // @Tags         Tasks
 // @Accept       json
 // @Produce      json
+// @Param        task_id path string true "task_id"
 // @Param 		 request body TaskRequest true "body"
 // @Success      200 {object} int
 // @Failure      400 {object} ErrorResponse
