@@ -56,25 +56,23 @@ func Up() {
 		}).Fatal(err)
 	}
 
-	kafkaAddr := fmt.Sprintf("%s:%d", envCfg.KafkaHost, envCfg.KafkaPort)
-	producer, err := queue.NewProducer(kafkaAddr, envCfg.KafkaNameTopic, log.WithFields(log.Fields{"queue": "Producer"}))
+	producer, err := queue.NewProducer(envCfg, log.WithFields(log.Fields{"queue": "Producer"}))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action": "queue.NewProducer",
 		}).Fatal(err)
 	}
-	defer producer.Writer.Close()
+	defer func() { _ = producer.Writer.Close() }()
 
 	workerRepo := worker.NewRepo(postgresClient)
 	workerService := worker.NewService(workerRepo, log.WithFields(log.Fields{"service": "Worker"}))
-	consumer, err := queue.NewConsumer(kafkaAddr, envCfg.KafkaNameTopic, workerService, log.WithFields(log.Fields{"queue": "Consumer"}))
+	consumer, err := queue.NewConsumer(envCfg, workerService, log.WithFields(log.Fields{"queue": "Consumer"}))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action": "queue.NewConsumer",
 		}).Fatal(err)
 	}
-	defer consumer.Reader.Close()
-
+	defer func() { _ = consumer.Reader.Close() }()
 	go consumer.Start()
 
 	app := fiber.New()
