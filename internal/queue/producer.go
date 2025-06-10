@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/google/uuid"
+	"github.com/mellgit/task-manager/internal/config"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 type TaskPayload struct {
@@ -15,23 +17,25 @@ type TaskPayload struct {
 
 type Producer struct {
 	Writer sarama.SyncProducer
-	topic  string
+	envCfg *config.EnvConfig
 	logger *log.Entry
+	topic  string
 }
 
-func NewProducer(brokerAddress, topic string, logger *log.Entry) (*Producer, error) {
+func NewProducer(envCfg *config.EnvConfig, logger *log.Entry) (*Producer, error) {
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Producer.Return.Successes = true
 	saramaConfig.Producer.RequiredAcks = sarama.WaitForAll
 	saramaConfig.Producer.Retry.Max = 5
 
-	producer, err := sarama.NewSyncProducer([]string{brokerAddress}, saramaConfig)
+	brokers := strings.Split(envCfg.KafkaBrokers, ",")
+	producer, err := sarama.NewSyncProducer(brokers, saramaConfig)
 	if err != nil {
 		return nil, err
 	}
 	return &Producer{
 		Writer: producer,
-		topic:  topic,
+		topic:  envCfg.KafkaTopic,
 		logger: logger,
 	}, nil
 }
