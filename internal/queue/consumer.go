@@ -42,7 +42,7 @@ func NewConsumer(envCfg *config.EnvConfig, serviceWorker worker.Service, logger 
 func (c *Consumer) Start() {
 
 	ctx := context.Background()
-	nc := &MyConsumer{serviceWorker: c.serviceWorker}
+	nc := &Consumer{serviceWorker: c.serviceWorker}
 	for {
 		err := c.Reader.Consume(ctx, c.topics, nc)
 		if err != nil {
@@ -55,26 +55,20 @@ func (c *Consumer) Start() {
 			c.logger.Info("default")
 		}
 	}
-
 }
 
-// MyConsumer Структура обработчика группы потребителей
-type MyConsumer struct {
-	serviceWorker worker.Service
-}
-
-// Setup Метод настройки перед началом работы
-func (m *MyConsumer) Setup(session sarama.ConsumerGroupSession) error {
+// Setup method before starting work
+func (c *Consumer) Setup(session sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-// Cleanup Метод очистки ресурсов после завершения работы
-func (m *MyConsumer) Cleanup(session sarama.ConsumerGroupSession) error {
+// Cleanup a method for cleaning up resources after work is completed
+func (c *Consumer) Cleanup(session sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-// ConsumeClaim Основной метод обработки сообщений
-func (m *MyConsumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+// ConsumeClaim main method of message processing
+func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 
 	type TaskPayload struct {
 		TaskID uuid.UUID `json:"task_id"`
@@ -82,18 +76,17 @@ func (m *MyConsumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sar
 	}
 	for message := range claim.Messages() {
 
-		//m.worker.Logger.Infof("consume from kafka: topic=%v, value=%v", message.Topic, string(message.Value))
-
+		c.logger.Infof("consume from kafka: topic=%v, value=%v", message.Topic, string(message.Value))
 		data := new(TaskPayload)
 		var _ = json.Unmarshal(message.Value, data)
-		fromWorker := m.serviceWorker.GetPayload()
+		fromWorker := c.serviceWorker.GetPayload()
 		fromWorker.UserID = data.UserID
 		fromWorker.TaskID = data.TaskID
-		if err := m.serviceWorker.Process(fromWorker); err != nil {
-			//c.logger.Errorf("failed to process task: %v\n", err)
+		if err := c.serviceWorker.Process(fromWorker); err != nil {
+			c.logger.Errorf("failed to process task: %v\n", err)
 			continue
 		}
-		// Отмечаем сообщение как обработанное
+		// mark the message as processed
 		session.MarkMessage(message, "")
 	}
 
