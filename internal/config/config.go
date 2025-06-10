@@ -31,9 +31,11 @@ type EnvConfig struct {
 	MigrationsPath string `env:"POSTGRES_MIGRATIONS_PATH" envDefault:"./migrations"`
 	MigrationsDSN  string `env:"POSTGRES_MIGRATIONS_DSN" envDefault:"host=$(DB_HOST) port=$(DB_PORT) dbname=$(DB_NAME) user=$(DB_USER) password=$(DB_PASSWORD) sslmode=disable"`
 
-	KafkaHost      string `env:"KAFKA_HOST" envDefault:"localhost"`
-	KafkaPort      int    `env:"KAFKA_PORT" envDefault:"9092"`
-	KafkaNameTopic string `env:"KAFKA_NAME_TOPIC" envDefault:"tasks"`
+	KafkaBrokers  string `env:"KAFKA_BROKERS" envDefault:"kafka:9092"`
+	KafkaUserName string `env:"KAFKA_USERNAME" envDefault:"kafka"`
+	KafkaPassword string `env:"KAFKA_PASSWORD" envDefault:"kafka"`
+	KafkaTopic    string `env:"KAFKA_TOPIC" envDefault:"tasks"`
+	KafkaGroup    string `env:"KAFKA_GROUP" envDefault:"task-manager"`
 }
 
 // LoadConfig reads configuration from yml file
