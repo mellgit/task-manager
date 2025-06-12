@@ -1,3 +1,16 @@
+broker:
+  algorithm: "sha256"
+  max_message_bytes: 3
+  sasl:
+    enabled: false
+  kafka_tls:
+    enabled: false
+    tls_skip_verify: true
+    cert_file: ""
+    key_file: ""
+    ca_file: ""
+
+
 logging:
   level: "debug"
   formatter: "text"
