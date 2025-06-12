@@ -16,13 +16,39 @@ type Consumer struct {
 	Reader        sarama.ConsumerGroup
 	serviceWorker worker.Service
 	envCfg        *config.EnvConfig
+	cfg           *config.Config
 	logger        *log.Entry
 	topics        []string
 }
 
-func NewConsumer(envCfg *config.EnvConfig, serviceWorker worker.Service, logger *log.Entry) (*Consumer, error) {
+func NewConsumer(envCfg *config.EnvConfig, cfg *config.Config, serviceWorker worker.Service, logger *log.Entry) (*Consumer, error) {
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Consumer.Return.Errors = true
+	saramaConfig.Producer.Retry.Max = 1
+	saramaConfig.Producer.RequiredAcks = sarama.WaitForAll
+	saramaConfig.Producer.Return.Successes = true
+	saramaConfig.Producer.MaxMessageBytes = cfg.Broker.MaxMessageBytes * 1024 * 1024
+	saramaConfig.ClientID = "sasl_scram_client"
+	saramaConfig.Metadata.Full = true
+	saramaConfig.Net.SASL.Enable = cfg.Broker.SASL.Enabled
+	saramaConfig.Net.SASL.User = envCfg.KafkaUserName
+	saramaConfig.Net.SASL.Password = envCfg.KafkaPassword
+	saramaConfig.Net.SASL.Handshake = true
+
+	if cfg.Broker.Algorithm == "sha512" {
+		saramaConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient { return &XDGSCRAMClient{HashGeneratorFcn: SHA512} }
+		saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+	} else if cfg.Broker.Algorithm == "sha256" {
+		saramaConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient { return &XDGSCRAMClient{HashGeneratorFcn: SHA256} }
+		saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+	} else {
+		logger.Fatalf("Invalid Broker Algorithm '%s'", cfg.Broker.Algorithm)
+	}
+	if cfg.Broker.KafkaTLS.Enabled {
+		saramaConfig.Net.TLS.Enable = true
+		saramaConfig.Net.TLS.Config = createTLSConfiguration(cfg)
+	}
+
 	brokers := strings.Split(envCfg.KafkaBrokers, ",")
 	topics := strings.Split(envCfg.KafkaTopic, ",")
 	groupID := envCfg.KafkaGroup
@@ -42,7 +68,8 @@ func NewConsumer(envCfg *config.EnvConfig, serviceWorker worker.Service, logger 
 func (c *Consumer) Start() {
 
 	ctx := context.Background()
-	nc := &Consumer{serviceWorker: c.serviceWorker}
+	// it is better, of course, to make a separate structure
+	nc := &Consumer{serviceWorker: c.serviceWorker, logger: c.logger}
 	for {
 		err := c.Reader.Consume(ctx, c.topics, nc)
 		if err != nil {
@@ -77,6 +104,7 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 	for message := range claim.Messages() {
 
 		c.logger.Infof("consume from kafka: topic=%v, value=%v", message.Topic, string(message.Value))
+		//fmt.Printf("consume from kafka: topic=%v, value=%v", message.Topic, string(message.Value))
 		data := new(TaskPayload)
 		var _ = json.Unmarshal(message.Value, data)
 		fromWorker := c.serviceWorker.GetPayload()
