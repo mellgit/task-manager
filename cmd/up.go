@@ -56,7 +56,7 @@ func Up() {
 		}).Fatal(err)
 	}
 
-	producer, err := queue.NewProducer(envCfg, log.WithFields(log.Fields{"queue": "Producer"}))
+	producer, err := queue.NewProducer(envCfg, cfg, log.WithFields(log.Fields{"queue": "Producer"}))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action": "queue.NewProducer",
@@ -66,7 +66,7 @@ func Up() {
 
 	workerRepo := worker.NewRepo(postgresClient)
 	workerService := worker.NewService(workerRepo, log.WithFields(log.Fields{"service": "Worker"}))
-	consumer, err := queue.NewConsumer(envCfg, workerService, log.WithFields(log.Fields{"queue": "Consumer"}))
+	consumer, err := queue.NewConsumer(envCfg, cfg, workerService, log.WithFields(log.Fields{"queue": "Consumer"}))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action": "queue.NewConsumer",
