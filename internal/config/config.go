@@ -9,6 +9,26 @@ import (
 
 type Config struct {
 	Logging `mapstructure:"logging"`
+	Broker  `mapstructure:"broker"`
+}
+
+type Broker struct {
+	Algorithm       string `mapstructure:"algorithm"`
+	MaxMessageBytes int    `mapstructure:"max_message_bytes"`
+	KafkaTLS        `mapstructure:"kafka_tls"`
+	SASL            `mapstructure:"sasl"`
+}
+
+type SASL struct {
+	Enabled bool `mapstructure:"enabled"`
+}
+
+type KafkaTLS struct {
+	Enabled       bool   `mapstructure:"enabled"`
+	TLSSkipVerify bool   `mapstructure:"tls_skip_verify"`
+	CertFile      string `mapstructure:"cert_file"`
+	KeyFile       string `mapstructure:"key_file"`
+	CAFile        string `mapstructure:"ca_file"`
 }
 
 type Logging struct {
